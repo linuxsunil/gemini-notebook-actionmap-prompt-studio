@@ -1,0 +1,26 @@
+# Standard Operating Procedure: Phishing & Data Privacy Response (SOP-SEC-04)
+
+**Effective Date:** January 2026 | **Owner:** Information Security & Compliance
+**Applies To:** All full-time employees, contractors, and vendors with corporate email or Slack access.
+
+## 1. Business Objective
+Reduce successful credential-harvesting and unauthorized data-exfiltration incidents to zero by ensuring employees verify unusual requests out-of-band and report suspicious messages within 15 minutes.
+
+## 2. Recognizing High-Risk Indicators
+Employees must treat any message as suspicious if it contains one or more of the following:
+* **Artificial Urgency:** Demands for immediate action ("within 30 minutes," "account will be locked today," "urgent CEO request").
+* **Domain Mismatches:** Lookalike domains (e.g., `c0mpany-hr.com`, `microsoft-support-login.net`) or external senders impersonating internal executives.
+* **Unusual Attachments or Links:** Unexpected `.zip`, `.html`, or macro-enabled Office files, or shortened URLs leading to external login portals.
+* **PII or Credential Requests:** Requests to share passwords, MFA codes, employee SSNs, payroll spreadsheets, or customer lists over email, Slack, or unapproved file-sharing tools.
+
+## 3. Mandatory Response Actions
+* **DO NOT** click links, download attachments, or reply to the sender—even to tell them you know it is a scam.
+* **DO NOT** click "Unsubscribe" on suspicious external emails; this confirms your address is active.
+* **DO NOT** forward the suspicious email to colleagues or your manager to ask "Is this real?" Forwarding spreads the payload.
+* **DO** verify urgent financial, access, or data requests **out-of-band** (call the person on their known internal directory number or message them in a separate, verified Slack thread—never using contact info inside the suspicious message).
+* **DO** report the message within **15 minutes** using the **Report Phish** button in your email client, or by taking a screenshot (without opening attachments) and submitting a ticket to `security@company.com`.
+
+## 4. If You Already Clicked or Shared Data
+* **Never hide it.** There is no disciplinary penalty for reporting an accidental click immediately; hiding a breach violates company policy.
+* Disconnect from the corporate VPN/Wi-Fi if a file was downloaded.
+* Contact the InfoSec Hotline (`ext. 4400`) immediately so the team can revoke session tokens and force a password/MFA reset within 10 minutes.
