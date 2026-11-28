@@ -600,7 +600,7 @@
               <button type="button" class="btn-primary" id="btn-preview" onclick="renderPreview()" disabled>Render Live Preview</button>
               <button type="button" class="btn-emerald" id="btn-download" onclick="downloadCourseHtml()" disabled>Download Standalone HTML</button>
               <button type="button" class="btn-primary" id="btn-scorm" onclick="downloadScormPackage()" disabled>Download SCORM 1.2 (.zip)</button>
-              <button type="button" class="btn-secondary" id="btn-rise" onclick="copyRiseEmbedCode()" disabled>Copy Rise 360 Embed Code</button>
+              <button type="button" class="btn-secondary" id="btn-rise" onclick="copyRiseEmbedCode()" disabled>Copy Rise 360 HTML</button>
               <button type="button" class="btn-secondary" onclick="clearJsonInput()">Clear</button>
             </div>
 
@@ -1110,13 +1110,44 @@ ${source}
     }
 
     function copyRiseEmbedCode() {
-      const slug = getFileSlug();
-      const hostedDemoUrl = `https://linuxsunil.github.io/gemini-notebook-actionmap-prompt-studio/demos/${slug}.html`;
-      const embedCode = `<iframe src="${hostedDemoUrl}" width="100%" height="750px" frameborder="0" style="border:1px solid #cbd5e1; border-radius:8px;" allowfullscreen></iframe>`;
-      navigator.clipboard.writeText(embedCode).then(() => {
+      if (!compiledCourseHtml) return;
+      // Build a fully self-contained snippet for Rise 360 "Add Code" block.
+      // No hosting needed — all HTML/CSS/JS is inline.
+      const title = (parsedCourseData && parsedCourseData.meta && parsedCourseData.meta.title) || 'ActionMap Simulation';
+      const riseHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>${title.replace(/</g,'&lt;')}</title>
+<style>
+html,body{margin:0;padding:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;}
+.rise-wrap{max-width:900px;margin:0 auto;padding:1rem;}
+</style>
+</head>
+<body>
+<div class="rise-wrap">
+${compiledCourseHtml.replace(/^[\s\S]*?<body[^>]*>/i,'').replace(/<\/body>[\s\S]*$/i,'')}
+</div>
+</body>
+</html>`;
+      navigator.clipboard.writeText(riseHtml).then(() => {
         const btn = document.getElementById('btn-rise');
-        btn.textContent = 'Copied Embed Code!';
-        setTimeout(() => { btn.textContent = 'Copy Rise 360 Embed Code'; }, 2000);
+        btn.textContent = 'Copied! Paste in Rise → Add Code';
+        setTimeout(() => { btn.textContent = 'Copy Rise 360 HTML'; }, 2500);
+      }).catch(() => {
+        // Fallback for browsers that block clipboard without user gesture
+        const ta = document.createElement('textarea');
+        ta.value = riseHtml;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        const btn = document.getElementById('btn-rise');
+        btn.textContent = 'Copied! Paste in Rise → Add Code';
+        setTimeout(() => { btn.textContent = 'Copy Rise 360 HTML'; }, 2500);
       });
     }
 
