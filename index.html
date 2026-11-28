@@ -44,7 +44,6 @@
     :focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
     [hidden] { display: none !important; }
 
-    /* Header */
     header {
       background: var(--navy);
       color: #ffffff;
@@ -80,7 +79,6 @@
       color: #cbd5e1;
     }
 
-    /* Nav Tabs */
     .nav-tabs {
       display: flex;
       gap: 0.4rem;
@@ -101,7 +99,6 @@
     .nav-tab:hover { background: rgba(255, 255, 255, 0.14); }
     .nav-tab.active { background: #ffffff; color: var(--navy); }
 
-    /* Main Container */
     main {
       max-width: 1400px;
       margin: 0 auto;
@@ -110,7 +107,6 @@
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
-    /* Dependency Warning */
     .dep-warning {
       background: var(--error-bg);
       color: var(--error-ink);
@@ -122,7 +118,6 @@
       font-size: 0.9rem;
     }
 
-    /* 3-Step Workflow Grid */
     .studio-stack {
       display: flex;
       flex-direction: column;
@@ -170,7 +165,6 @@
       padding: 1.25rem 1.5rem;
     }
 
-    /* Preset Bar */
     .preset-bar {
       display: flex;
       flex-wrap: wrap;
@@ -197,7 +191,6 @@
       background: var(--navy-soft);
     }
 
-    /* Forms */
     .grid-2 {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -235,7 +228,6 @@
     }
     textarea { resize: vertical; }
 
-    /* Theory Callout Box */
     .theory-callout {
       background: var(--navy-soft);
       border: 1px solid #bfdbfe;
@@ -256,7 +248,6 @@
     }
     .theory-callout p { margin: 0.25rem 0; }
 
-    /* Prompt Output */
     .prompt-box {
       width: 100%;
       max-height: 360px;
@@ -272,7 +263,6 @@
       overflow-y: auto;
     }
 
-    /* Buttons */
     .btn-row {
       display: flex;
       flex-wrap: wrap;
@@ -311,7 +301,6 @@
     .btn-secondary:hover:not(:disabled) { background: var(--surface-alt); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* Step 3 JSON Exporter */
     .json-input {
       font-family: var(--font-mono);
       font-size: 0.8rem;
@@ -358,7 +347,6 @@
       background: #ffffff;
     }
 
-    /* Tab 2: Side-by-Side Comparison */
     .compare-toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -468,6 +456,7 @@
       .grid-2, .grid-3, .split-grid { grid-template-columns: 1fr; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
   <header>
@@ -594,7 +583,7 @@
           <div class="step-header">
             <div class="step-title-wrap">
               <span class="step-badge">Step 3</span>
-              <h2>Paste AI JSON &rarr; Preview &amp; Export Delivery-Ready HTML</h2>
+              <h2>Paste AI JSON &rarr; Preview &amp; Export Formats</h2>
             </div>
             <div class="btn-row">
               <span id="json-status" class="status-pill status-idle">Waiting for JSON</span>
@@ -609,7 +598,9 @@
 
             <div class="btn-row">
               <button type="button" class="btn-primary" id="btn-preview" onclick="renderPreview()" disabled>Render Live Preview</button>
-              <button type="button" class="btn-emerald" id="btn-download" onclick="downloadCourseHtml()" disabled>Download Delivery-Ready HTML</button>
+              <button type="button" class="btn-emerald" id="btn-download" onclick="downloadCourseHtml()" disabled>Download Standalone HTML</button>
+              <button type="button" class="btn-primary" id="btn-scorm" onclick="downloadScormPackage()" disabled>Download SCORM 1.2 (.zip)</button>
+              <button type="button" class="btn-secondary" id="btn-rise" onclick="copyRiseEmbedCode()" disabled>Copy Rise 360 Embed Code</button>
               <button type="button" class="btn-secondary" onclick="clearJsonInput()">Clear</button>
             </div>
 
@@ -834,13 +825,11 @@
         return;
       }
 
-      // Populate Performance Goal dropdown
       const goalSel = document.getElementById('f-goal-type');
       goalSel.innerHTML = Object.entries(GOAL_MATRIX)
         .map(([key, val]) => `<option value="${key}">${val.label}</option>`)
         .join('');
 
-      // Populate Primary & Secondary 60-Theory dropdowns grouped by category
       const categories = [...new Set(ID_THEORIES.map(t => t.category))];
       const optionsHtml = categories.map(cat => {
         const items = ID_THEORIES.filter(t => t.category === cat)
@@ -997,6 +986,8 @@ ${source}
       const statusEl = document.getElementById('json-status');
       const btnPrev = document.getElementById('btn-preview');
       const btnDl = document.getElementById('btn-download');
+      const btnScorm = document.getElementById('btn-scorm');
+      const btnRise = document.getElementById('btn-rise');
 
       if (!raw.trim()) {
         parsedCourseData = null;
@@ -1005,6 +996,8 @@ ${source}
         statusEl.className = 'status-pill status-idle';
         btnPrev.disabled = true;
         btnDl.disabled = true;
+        btnScorm.disabled = true;
+        btnRise.disabled = true;
         return;
       }
 
@@ -1020,6 +1013,8 @@ ${source}
         statusEl.className = 'status-pill status-valid';
         btnPrev.disabled = false;
         btnDl.disabled = false;
+        btnScorm.disabled = false;
+        btnRise.disabled = false;
       } catch (err) {
         parsedCourseData = null;
         compiledCourseHtml = "";
@@ -1027,6 +1022,8 @@ ${source}
         statusEl.className = 'status-pill status-error';
         btnPrev.disabled = true;
         btnDl.disabled = true;
+        btnScorm.disabled = true;
+        btnRise.disabled = true;
       }
     }
 
@@ -1061,10 +1058,14 @@ ${source}
       window.open(url, '_blank', 'noopener');
     }
 
+    function getFileSlug() {
+      const rawTitle = (parsedCourseData && parsedCourseData.meta && parsedCourseData.meta.title) || 'actionmap-simulation';
+      return rawTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'actionmap-simulation';
+    }
+
     function downloadCourseHtml() {
       if (!compiledCourseHtml) return;
-      const rawTitle = (parsedCourseData.meta && parsedCourseData.meta.title) || 'actionmap-simulation';
-      const slug = rawTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'actionmap-simulation';
+      const slug = getFileSlug();
       const blob = new Blob([compiledCourseHtml], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1074,6 +1075,49 @@ ${source}
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function downloadScormPackage() {
+      if (!compiledCourseHtml || typeof JSZip === 'undefined') return;
+      const btn = document.getElementById('btn-scorm');
+      btn.textContent = 'Packaging ZIP...';
+      btn.disabled = true;
+
+      try {
+        const title = (parsedCourseData && parsedCourseData.meta && parsedCourseData.meta.title) || 'ActionMap Simulation';
+        const slug = getFileSlug();
+        const manifestXml = generateImsManifest(title, slug);
+
+        const zip = new JSZip();
+        zip.file("index.html", compiledCourseHtml);
+        zip.file("imsmanifest.xml", manifestXml);
+
+        const content = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${slug}-scorm1.2.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (err) {
+        alert("Failed to create SCORM zip: " + err.message);
+      } finally {
+        btn.textContent = 'Download SCORM 1.2 (.zip)';
+        btn.disabled = false;
+      }
+    }
+
+    function copyRiseEmbedCode() {
+      const slug = getFileSlug();
+      const hostedDemoUrl = `https://linuxsunil.github.io/gemini-notebook-actionmap-prompt-studio/demos/${slug}.html`;
+      const embedCode = `<iframe src="${hostedDemoUrl}" width="100%" height="750px" frameborder="0" style="border:1px solid #cbd5e1; border-radius:8px;" allowfullscreen></iframe>`;
+      navigator.clipboard.writeText(embedCode).then(() => {
+        const btn = document.getElementById('btn-rise');
+        btn.textContent = 'Copied Embed Code!';
+        setTimeout(() => { btn.textContent = 'Copy Rise 360 Embed Code'; }, 2000);
+      });
     }
 
     window.addEventListener('DOMContentLoaded', initApp);
